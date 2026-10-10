@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 
+from typing import Any
+
+
 class ShopError(Exception):
     """Базовая ошибка магазина."""
 
@@ -105,6 +108,14 @@ class Product(ABC):
     def details(self) -> dict[str, str | int]:
         """Вернуть специфическую характеристику товара."""
 
+    def to_dict(self) -> dict[str, Any]:
+        """Подготовить общие и специфические поля для сохранения."""
+        return {
+            "kind": self.kind, "product_id": self.product_id,
+            "name": self.name, "brand": self.brand.name,
+            "category": self.category.name, "price": str(self.price),
+            "stock": self.stock, **self.details(),
+        }
 
     def __str__(self) -> str:
         details = ", ".join(f"{key}={value}"
@@ -241,6 +252,39 @@ class Charger(Product):
         return {"power_w": self.power_w}
 
 
+PRODUCT_TYPES: dict[str, tuple[type[Product], str]] = {
+    "smartphone": (Smartphone, "storage_gb"),
+    "laptop": (Laptop, "ram_gb"),
+    "tablet": (Tablet, "battery_mah"),
+    "monitor": (Monitor, "refresh_hz"),
+    "keyboard": (Keyboard, "layout"),
+    "mouse": (Mouse, "dpi"),
+    "headphones": (Headphones, "connection"),
+    "charger": (Charger, "power_w"),
+}
+
+
+def product_from_dict(data: dict[str, Any]) -> Product:
+    """Проверить структуру записи и вызвать конструктор нужного класса."""
+    if not isinstance(data, dict):
+        raise DataFormatError("Запись товара должна быть объектом")
+    kind = data.get("kind")
+    if not isinstance(kind, str) or kind not in PRODUCT_TYPES:
+        raise DataFormatError("Неизвестный вид товара")
+    product_class, field = PRODUCT_TYPES[kind]
+    expected = {"kind", "product_id", "name", "brand", "category",
+                "price", "stock", field}
+    if set(data) != expected:
+        raise DataFormatError("Неверный набор полей товара")
+    if not isinstance(data["price"], str):
+        raise DataFormatError("Цена в файле должна быть строкой")
+    return product_class(
+        data["product_id"], data["name"], Brand(data["brand"]),
+        Category(data["category"]), data["price"], data["stock"],
+        **{field: data[field]},
+    )
+
+
 class ProductRepository:
     """CRUD каталога. Копии защищают записи от случайного изменения."""
 
@@ -249,7 +293,8 @@ class ProductRepository:
 
     def create(self, product: Product) -> None:
         """Добавить товар с уникальным артикулом."""
-        checked = deepcopy(product)
+        # Повторная проверка нужна, если поля объекта менялись после создания.
+        checked = product_from_dict(product.to_dict())
         if checked.product_id in self._products:
             raise DuplicateProductError("Артикул уже существует")
         self._products[checked.product_id] = checked
@@ -265,7 +310,7 @@ class ProductRepository:
     def update(self, product_id: str, product: Product) -> None:
         """Заменить существующий товар, сохранив его артикул."""
         self.read_by_id(product_id)
-        checked = deepcopy(product)
+        checked = product_from_dict(product.to_dict())
         if checked.product_id != product_id:
             raise ValidationError("При обновлении нельзя менять артикул")
         self._products[product_id] = checked
@@ -334,6 +379,13 @@ def main() -> None:
         shop.products.read_by_id("TEMP")
     except ProductNotFoundError as error:
         print(f"Ошибка обработана: {error}")
+
+    print("\n4. Преобразование записи товара")
+    record = shop.products.read_by_id("P1").to_dict()
+    restored = product_from_dict(record)
+    print("Словарь:", record)
+    print("Восстановленный товар:", restored)
+
 
 
 if __name__ == "__main__":
