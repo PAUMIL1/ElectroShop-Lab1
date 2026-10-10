@@ -4,6 +4,9 @@
 from abc import ABC, abstractmethod
 
 
+from copy import deepcopy
+
+
 from dataclasses import dataclass
 
 
@@ -238,12 +241,71 @@ class Charger(Product):
         return {"power_w": self.power_w}
 
 
+class ProductRepository:
+    """CRUD каталога. Копии защищают записи от случайного изменения."""
+
+    def __init__(self) -> None:
+        self._products: dict[str, Product] = {}
+
+    def create(self, product: Product) -> None:
+        """Добавить товар с уникальным артикулом."""
+        checked = deepcopy(product)
+        if checked.product_id in self._products:
+            raise DuplicateProductError("Артикул уже существует")
+        self._products[checked.product_id] = checked
+
+    def read_all(self) -> list[Product]:
+        return deepcopy(list(self._products.values()))
+
+    def read_by_id(self, product_id: str) -> Product:
+        if product_id not in self._products:
+            raise ProductNotFoundError(f"Товар {product_id} не найден")
+        return deepcopy(self._products[product_id])
+
+    def update(self, product_id: str, product: Product) -> None:
+        """Заменить существующий товар, сохранив его артикул."""
+        self.read_by_id(product_id)
+        checked = deepcopy(product)
+        if checked.product_id != product_id:
+            raise ValidationError("При обновлении нельзя менять артикул")
+        self._products[product_id] = checked
+
+    def delete(self, product_id: str) -> None:
+        self.read_by_id(product_id)
+        del self._products[product_id]
+
+
+class ElectroShop:
+    """Каталог электроники и его сохранение в двух форматах."""
+
+    def __init__(self) -> None:
+        self.products = ProductRepository()
+
+
+
+
+
+
+    def show_catalog(self) -> None:
+        for product in self.products.read_all():
+            print(product)
+
+
 def main() -> None:
-    """Показать характеристики разных видов электроники."""
+    """Показать исключения и операции CRUD каталога."""
     brand = Brand("ElectroDemo")
     mobile = Category("Мобильная электроника")
     computers = Category("Компьютеры и периферия")
     accessories = Category("Аксессуары")
+    shop = ElectroShop()
+
+    print("1. Обработка неверной цены")
+    try:
+        Smartphone("BAD", "Phone", brand, mobile, "-100", 1, 128)
+    except ValidationError as error:
+        print(f"Ошибка обработана: {error}")
+
+    print("\n2. Создание и чтение каталога")
     products = [
         Smartphone("P1", "Phone One", brand, mobile, "29990.00", 5, 128),
         Laptop("P2", "Book One", brand, computers, "79990.00", 3, 16),
@@ -256,8 +318,22 @@ def main() -> None:
         Charger("P8", "Charge One", brand, accessories, "1990.00", 9, 65),
     ]
     for product in products:
-        print(product)
+        shop.products.create(product)
+    shop.show_catalog()
 
+    print("\n3. Обновление и удаление")
+    phone = shop.products.read_by_id("P1")
+    phone.price = Decimal("28990.00")
+    shop.products.update("P1", phone)
+    print("Цена P1 обновлена:", shop.products.read_by_id("P1"))
+    temporary = Charger("TEMP", "Запасной", brand, accessories, "990", 1, 20)
+    shop.products.create(temporary)
+    shop.products.delete("TEMP")
+    print("Временный товар удалён")
+    try:
+        shop.products.read_by_id("TEMP")
+    except ProductNotFoundError as error:
+        print(f"Ошибка обработана: {error}")
 
 
 if __name__ == "__main__":
