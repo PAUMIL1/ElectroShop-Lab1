@@ -1,0 +1,82 @@
+[
+    {
+        "kind": "smartphone",
+        "product_id": "P1",
+        "name": "Phone One",
+        "brand": "ElectroDemo",
+        "category": "Мобильная электроника",
+        "price": "28990.00",
+        "stock": 5,
+        "storage_gb": 128
+    },
+    {
+        "kind": "laptop",
+        "product_id": "P2",
+        "name": "Book One",
+        "brand": "ElectroDemo",
+        "category": "Компьютеры и периферия",
+        "price": "79990.00",
+        "stock": 3,
+        "ram_gb": 16
+    },
+    {
+        "kind": "tablet",
+        "product_id": "P3",
+        "name": "Tab One",
+        "brand": "ElectroDemo",
+        "category": "Мобильная электроника",
+        "price": "24990.00",
+        "stock": 4,
+        "battery_mah": 8000
+    },
+    {
+        "kind": "monitor",
+        "product_id": "P4",
+        "name": "Display One",
+        "brand": "ElectroDemo",
+        "category": "Компьютеры и периферия",
+        "price": "19990.00",
+        "stock": 6,
+        "refresh_hz": 144
+    },
+    {
+        "kind": "keyboard",
+        "product_id": "P5",
+        "name": "Keys One",
+        "brand": "ElectroDemo",
+        "category": "Компьютеры и периферия",
+        "price": "2990.00",
+        "stock": 8,
+        "layout": "RU/EN"
+    },
+    {
+        "kind": "mouse",
+        "product_id": "P6",
+        "name": "Mouse One",
+        "brand": "ElectroDemo",
+        "category": "Компьютеры и периферия",
+        "price": "1490.00",
+        "stock": 10,
+        "dpi": 3200
+    },
+    {
+        "kind": "headphones",
+        "product_id": "P7",
+        "name": "Sound One",
+        "brand": "ElectroDemo",
+        "category": "Аксессуары",
+        "price": "4990.00",
+        "stock": 7,
+        "connection": "Bluetooth"
+    },
+    {
+        "kind": "charger",
+        "product_id": "P8",
+        "name": "Charge One",
+        "brand": "ElectroDemo",
+        "category": "Аксессуары",
+        "price": "1990.00",
+        "stock": 9,
+        "power_w": 65
+    }
+]

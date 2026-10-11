@@ -1,6 +1,9 @@
 """ElectroShop — каталог электроники."""
 
 
+import json
+
+
 from abc import ABC, abstractmethod
 
 
@@ -11,6 +14,9 @@ from dataclasses import dataclass
 
 
 from decimal import Decimal, InvalidOperation
+
+
+from pathlib import Path
 
 
 from typing import Any
@@ -326,8 +332,29 @@ class ElectroShop:
     def __init__(self) -> None:
         self.products = ProductRepository()
 
+    def _restore(self, records: list[dict[str, Any]]) -> None:
+        if not isinstance(records, list):
+            raise DataFormatError("Ожидается список товаров")
+        restored = ProductRepository()
+        for record in records:
+            restored.create(product_from_dict(record))
+        # Заменяем каталог только после проверки всех записей.
+        self.products = restored
 
+    def save_json(self, path: str | Path) -> None:
+        data = [product.to_dict() for product in self.products.read_all()]
+        try:
+            with open(path, "w", encoding="utf-8") as stream:
+                json.dump(data, stream, ensure_ascii=False, indent=4)
+        except OSError as error:
+            raise DataFormatError(f"Ошибка записи JSON: {error}") from error
 
+    def load_json(self, path: str | Path) -> None:
+        try:
+            with open(path, encoding="utf-8") as stream:
+                self._restore(json.load(stream))
+        except (OSError, ValueError, ShopError) as error:
+            raise DataFormatError(f"Ошибка загрузки JSON: {error}") from error
 
 
 
@@ -337,7 +364,7 @@ class ElectroShop:
 
 
 def main() -> None:
-    """Показать исключения и операции CRUD каталога."""
+    """Последовательно показать исключения, CRUD и файловый обмен."""
     brand = Brand("ElectroDemo")
     mobile = Category("Мобильная электроника")
     computers = Category("Компьютеры и периферия")
@@ -380,12 +407,16 @@ def main() -> None:
     except ProductNotFoundError as error:
         print(f"Ошибка обработана: {error}")
 
-    print("\n4. Преобразование записи товара")
-    record = shop.products.read_by_id("P1").to_dict()
-    restored = product_from_dict(record)
-    print("Словарь:", record)
-    print("Восстановленный товар:", restored)
+    print("\n4. Сохранение JSON")
+    folder = Path(__file__).resolve().parent
+    json_path = folder / "products.json"
+    shop.save_json(json_path)
+    print("Создан products.json")
 
+    print("\n5. Восстановление каталога из JSON")
+    from_json = ElectroShop()
+    from_json.load_json(json_path)
+    from_json.show_catalog()
 
 
 if __name__ == "__main__":
