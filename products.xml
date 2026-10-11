@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='utf-8'?>
+<products>
+    <product kind="smartphone">
+        <product_id>P1</product_id>
+        <name>Phone One</name>
+        <brand>ElectroDemo</brand>
+        <category>Мобильная электроника</category>
+        <price>28990.00</price>
+        <stock>5</stock>
+        <storage_gb>128</storage_gb>
+    </product>
+    <product kind="laptop">
+        <product_id>P2</product_id>
+        <name>Book One</name>
+        <brand>ElectroDemo</brand>
+        <category>Компьютеры и периферия</category>
+        <price>79990.00</price>
+        <stock>3</stock>
+        <ram_gb>16</ram_gb>
+    </product>
+    <product kind="tablet">
+        <product_id>P3</product_id>
+        <name>Tab One</name>
+        <brand>ElectroDemo</brand>
+        <category>Мобильная электроника</category>
+        <price>24990.00</price>
+        <stock>4</stock>
+        <battery_mah>8000</battery_mah>
+    </product>
+    <product kind="monitor">
+        <product_id>P4</product_id>
+        <name>Display One</name>
+        <brand>ElectroDemo</brand>
+        <category>Компьютеры и периферия</category>
+        <price>19990.00</price>
+        <stock>6</stock>
+        <refresh_hz>144</refresh_hz>
+    </product>
+    <product kind="keyboard">
+        <product_id>P5</product_id>
+        <name>Keys One</name>
+        <brand>ElectroDemo</brand>
+        <category>Компьютеры и периферия</category>
+        <price>2990.00</price>
+        <stock>8</stock>
+        <layout>RU/EN</layout>
+    </product>
+    <product kind="mouse">
+        <product_id>P6</product_id>
+        <name>Mouse One</name>
+        <brand>ElectroDemo</brand>
+        <category>Компьютеры и периферия</category>
+        <price>1490.00</price>
+        <stock>10</stock>
+        <dpi>3200</dpi>
+    </product>
+    <product kind="headphones">
+        <product_id>P7</product_id>
+        <name>Sound One</name>
+        <brand>ElectroDemo</brand>
+        <category>Аксессуары</category>
+        <price>4990.00</price>
+        <stock>7</stock>
+        <connection>Bluetooth</connection>
+    </product>
+    <product kind="charger">
+        <product_id>P8</product_id>
+        <name>Charge One</name>
+        <brand>ElectroDemo</brand>
+        <category>Аксессуары</category>
+        <price>1990.00</price>
+        <stock>9</stock>
+        <power_w>65</power_w>
+    </product>
+</products>

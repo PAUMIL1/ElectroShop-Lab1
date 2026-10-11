@@ -1,27 +1,16 @@
-"""ElectroShop — каталог электроники."""
-
+"""ElectroShop: каталог электроники, CRUD, сохранение JSON и XML."""
 
 import json
-
-
+import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
-
-
 from copy import deepcopy
-
-
 from dataclasses import dataclass
-
-
 from decimal import Decimal, InvalidOperation
-
-
 from pathlib import Path
-
-
 from typing import Any
 
 
+# Собственные исключения позволяют отличать причины ошибок.
 class ShopError(Exception):
     """Базовая ошибка магазина."""
 
@@ -258,6 +247,7 @@ class Charger(Product):
         return {"power_w": self.power_w}
 
 
+# По kind выбирается конкретный класс при восстановлении из файла.
 PRODUCT_TYPES: dict[str, tuple[type[Product], str]] = {
     "smartphone": (Smartphone, "storage_gb"),
     "laptop": (Laptop, "ram_gb"),
@@ -356,7 +346,47 @@ class ElectroShop:
         except (OSError, ValueError, ShopError) as error:
             raise DataFormatError(f"Ошибка загрузки JSON: {error}") from error
 
+    def save_xml(self, path: str | Path) -> None:
+        root = ET.Element("products")
+        for product in self.products.read_all():
+            record = product.to_dict()
+            node = ET.SubElement(root, "product", kind=record["kind"])
+            for key, value in record.items():
+                if key != "kind":
+                    ET.SubElement(node, key).text = str(value)
+        ET.indent(root, space="    ")
+        try:
+            # Проверка символов до открытия файла на запись.
+            content = ET.tostring(root, encoding="utf-8",
+                                  xml_declaration=True)
+            ET.fromstring(content)
+            Path(path).write_bytes(content)
+        except (OSError, ValueError, ET.ParseError) as error:
+            raise DataFormatError(f"Ошибка записи XML: {error}") from error
 
+    def load_xml(self, path: str | Path) -> None:
+        try:
+            root = ET.parse(path).getroot()
+            if root.tag != "products" or root.attrib:
+                raise DataFormatError("Неверный корень XML или его атрибуты")
+            records = []
+            for node in root:
+                if node.tag != "product" or set(node.attrib) != {"kind"}:
+                    raise DataFormatError("Ожидается product с атрибутом kind")
+                data: dict[str, Any] = {"kind": node.get("kind")}
+                for child in node:
+                    if child.tag in data or child.attrib or len(child):
+                        raise DataFormatError("Неверное поле XML или повтор")
+                    data[child.tag] = child.text or ""
+                # XML хранит текст: числовые поля преобразуем явно.
+                for field in ("stock", "storage_gb", "ram_gb", "battery_mah",
+                              "refresh_hz", "dpi", "power_w"):
+                    if field in data:
+                        data[field] = int(data[field])
+                records.append(data)
+            self._restore(records)
+        except (OSError, ValueError, ET.ParseError, ShopError) as error:
+            raise DataFormatError(f"Ошибка загрузки XML: {error}") from error
 
     def show_catalog(self) -> None:
         for product in self.products.read_all():
@@ -407,16 +437,23 @@ def main() -> None:
     except ProductNotFoundError as error:
         print(f"Ошибка обработана: {error}")
 
-    print("\n4. Сохранение JSON")
+    print("\n4. Сохранение JSON и XML")
     folder = Path(__file__).resolve().parent
     json_path = folder / "products.json"
+    xml_path = folder / "products.xml"
     shop.save_json(json_path)
-    print("Создан products.json")
+    shop.save_xml(xml_path)
+    print("Созданы products.json и products.xml")
 
     print("\n5. Восстановление каталога из JSON")
     from_json = ElectroShop()
     from_json.load_json(json_path)
     from_json.show_catalog()
+
+    print("\n6. Восстановление каталога из XML")
+    from_xml = ElectroShop()
+    from_xml.load_xml(xml_path)
+    from_xml.show_catalog()
 
 
 if __name__ == "__main__":
